@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FluxClient Loader</title>
   <style>
     :root {
@@ -12,11 +12,13 @@
       --white: #ffffff;
       --accent: #888;
     }
+
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
+
     body {
       font-family: 'Segoe UI', sans-serif;
       background: var(--bg-color);
@@ -29,6 +31,7 @@
       overflow: hidden;
       position: relative;
     }
+
     .background-overlay {
       position: absolute;
       width: 100%;
@@ -38,111 +41,123 @@
       z-index: 0;
       overflow: hidden;
     }
+
     .glow {
       position: absolute;
-      width: 250px;
-      height: 250px;
-      background: radial-gradient(ellipse at center, rgba(200, 200, 200, 0.15), transparent);
-      filter: blur(80px);
-      animation: floatGlow 6s infinite ease-in-out;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(ellipse at center, rgba(200, 200, 200, 0.2), transparent);
+      filter: blur(70px);
+      animation: floatGlow 4s infinite ease-in-out;
     }
-    .glow:nth-child(1) { top: 10%; left: 10%; animation-delay: 0s; }
-    .glow:nth-child(2) { bottom: 15%; right: 15%; animation-delay: 1s; }
-    .glow:nth-child(3) { top: 40%; left: 70%; animation-delay: 2s; }
-    .glow:nth-child(4) { top: 60%; left: 20%; animation-delay: 3s; }
-    .glow:nth-child(5) { bottom: 20%; right: 40%; animation-delay: 4s; }
+
+    .glow:nth-child(1) { top: 8%; left: 12%; animation-delay: 0s; }
+    .glow:nth-child(2) { bottom: 12%; right: 12%; animation-delay: 1s; }
+    .glow:nth-child(3) { top: 35%; left: 65%; animation-delay: 2s; }
+    .glow:nth-child(4) { top: 55%; left: 25%; animation-delay: 3s; }
+    .glow:nth-child(5) { bottom: 15%; right: 35%; animation-delay: 4s; }
+
     @keyframes floatGlow {
-      0%, 100% {
-        transform: translateY(0) scale(1);
-      }
-      50% {
-        transform: translateY(-20px) scale(1.2);
-      }
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.2); }
     }
+
     .centered {
       text-align: center;
       width: 100%;
-      max-width: 720px; /* увеличена ширина */
+      max-width: 400px;
       z-index: 1;
     }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(14px);
+      padding: 40px 30px;
+      border-radius: 20px;
+      margin: 20px auto;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+      animation: fadePop 0.6s forwards ease-out;
+    }
+
+    @keyframes fadePop {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .card h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
     .btn {
       display: block;
-      background: #ffffff;
-      color: #000000;
+      background: linear-gradient(to right, #aaa, #fff);
+      color: #000;
       border: none;
-      padding: 20px 32px; /* увеличены отступы */
-      border-radius: 12px;
-      font-size: 20px; /* увеличен шрифт */
-      margin-top: 20px;
+      padding: 14px 22px;
+      border-radius: 14px;
+      font-size: 17px;
+      margin-top: 16px;
       width: 100%;
       font-weight: 600;
       cursor: pointer;
       text-align: center;
       text-decoration: none;
-      transition: transform 0.3s, background 0.3s;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 0 transparent;
     }
+
     .btn:hover {
-      background: #dddddd;
-      transform: scale(1.03);
+      transform: scale(1.04);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
     }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      backdrop-filter: blur(12px);
-      padding: 80px 60px; /* увеличены отступы */
-      border-radius: 28px;
-      margin: 40px auto;
-      box-shadow: 0 0 40px rgba(255, 255, 255, 0.05);
-      opacity: 0;
-      transform: translateY(30px);
-      animation: fadeInUp 0.8s forwards;
+
+    .btn:active {
+      transform: scale(0.98);
+      background: linear-gradient(to right, #999, #ddd);
     }
-    @keyframes fadeInUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    .card h2 {
-      margin-bottom: 32px;
-      font-size: 32px; /* увеличен размер заголовка */
-      font-weight: 600;
-      animation: fadeIn 1s ease-in-out;
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
+
     .loader-dots span {
       display: inline-block;
-      width: 14px;  /* чуть больше точки */
-      height: 14px;
+      width: 12px;
+      height: 12px;
       margin: 0 6px;
       background: var(--white);
       border-radius: 50%;
       animation: bounce 1s infinite ease-in-out;
     }
+
     .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
     .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+
     @keyframes bounce {
       0%, 80%, 100% { transform: scale(0); }
       40% { transform: scale(1); }
     }
+
     .timer-bar {
       width: 100%;
-      height: 20px; /* увеличена высота */
+      height: 14px;
       background: #2e2e2e;
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
-      margin-top: 32px;
+      margin-top: 24px;
     }
+
     .timer-bar .progress {
       height: 100%;
       width: 0%;
       background: linear-gradient(to right, #888, #fff);
-      border-radius: 10px;
-      transition: width 0.6s ease;
+      border-radius: 8px;
+      transition: width 0.5s ease-in-out;
     }
+
     .notification {
       position: fixed;
       top: 20px;
@@ -150,13 +165,14 @@
       transform: translateX(-50%);
       background: #1a1a1a;
       color: #fff;
-      padding: 18px 26px;
+      padding: 16px 24px;
       border: 1px solid #444;
       border-radius: 14px;
       opacity: 0;
       transition: opacity 0.3s;
       z-index: 9999;
     }
+
     .notification.show {
       opacity: 1;
     }
