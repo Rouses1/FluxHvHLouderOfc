@@ -97,7 +97,8 @@
 
     .btn {
       display: block;
-      background: linear-gradient(to right, #aaa, #fff);
+      background: linear-gradient(90deg, #888, #bbb, #eee, #fff);
+      background-size: 300% 100%;
       color: #000;
       border: none;
       padding: 14px 22px;
@@ -110,17 +111,22 @@
       text-align: center;
       text-decoration: none;
       transition: all 0.3s ease;
-      box-shadow: 0 0 0 transparent;
+      animation: gradientFlow 6s ease infinite;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .btn:hover {
       transform: scale(1.04);
-      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
     }
 
     .btn:active {
       transform: scale(0.98);
-      background: linear-gradient(to right, #999, #ddd);
     }
 
     .loader-dots span {
@@ -176,6 +182,27 @@
     .notification.show {
       opacity: 1;
     }
+
+    .version-tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .version-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .version-tab.active {
+      background: rgba(255, 255, 255, 0.2);
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
@@ -195,8 +222,8 @@
 
     <div class="card" id="subscribeModal" style="display:none">
       <h2>Подписка на каналы</h2>
-      <a class="btn" href="https://t.me/Chat_FluxHvH" target="_blank" onclick="startTimer(1)">Подписаться 1</a>
-      <a class="btn" href="https://t.me/FluxHvH" target="_blank" onclick="startTimer(2)">Подписаться 2</a>
+      <a class="btn" href="https://t.me/FluxHvH" target="_blank" onclick="markSubscribed(1)">Подписаться</a>
+      <a class="btn" href="https://t.me/Chat_FluxHvH" target="_blank" onclick="markSubscribed(2)">Подписаться</a>
       <div class="timer-bar">
         <div class="progress" id="progressBar"></div>
       </div>
@@ -212,7 +239,16 @@
 
     <div class="card" id="download" style="display:none">
       <h2>Скачать FluxClient</h2>
-      <a class="btn" href="https://www.mediafire.com/file/7u29yuhim55mxl9/FluxClient.apk/file" target="_blank">Скачать 64-bit версию</a>
+      <div class="version-tabs">
+        <div class="version-tab active" onclick="showVersion('stable')">x64 bit</div>
+        <div class="version-tab" onclick="showVersion('beta')">Beta</div>
+      </div>
+      <div id="stable-version">
+        <a class="btn" href="https://www.mediafire.com/file/7u29yuhim55mxl9/FluxClient.apk/file" target="_blank">Скачать</a>
+      </div>
+      <div id="beta-version" style="display:none">
+        <a class="btn" href="https://www.mediafire.com/file/spkqa0si0jnxcdw/Flux-Beta.apk/file" target="_blank">Скачать</a>
+      </div>
     </div>
 
     <div class="notification" id="errorMsg">
@@ -222,34 +258,50 @@
 
   <script>
     let subs = [false, false];
+    let checkingInProgress = false;
 
     function openModal() {
       document.getElementById('main').style.display = 'none';
       document.getElementById('subscribeModal').style.display = 'block';
+      updateProgress();
     }
 
-    function startTimer(index) {
+    function markSubscribed(index) {
       subs[index - 1] = true;
-      let progress = document.getElementById('progressBar');
+      updateProgress();
+    }
 
+    function updateProgress() {
+      let progress = document.getElementById('progressBar');
+      let checkBtn = document.getElementById('checkBtn');
+      
       if (subs[0] && subs[1]) {
         progress.style.width = '100%';
-        document.getElementById('checkBtn').disabled = false;
-      } else {
+        checkBtn.disabled = false;
+      } else if (subs[0] || subs[1]) {
         progress.style.width = '50%';
+        checkBtn.disabled = true;
+      } else {
+        progress.style.width = '0%';
+        checkBtn.disabled = true;
       }
     }
 
     function checkSubs() {
+      if (checkingInProgress) return;
+      
+      checkingInProgress = true;
       document.getElementById('subscribeModal').style.display = 'none';
       document.getElementById('checking').style.display = 'block';
 
       setTimeout(() => {
+        checkingInProgress = false;
         if (subs[0] && subs[1]) {
           document.getElementById('checking').style.display = 'none';
           document.getElementById('download').style.display = 'block';
         } else {
           document.getElementById('checking').style.display = 'none';
+          document.getElementById('subscribeModal').style.display = 'block';
           showError();
         }
       }, 2000);
@@ -259,6 +311,21 @@
       const error = document.getElementById('errorMsg');
       error.classList.add('show');
       setTimeout(() => error.classList.remove('show'), 4000);
+    }
+
+    function showVersion(version) {
+      const tabs = document.querySelectorAll('.version-tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      
+      if (version === 'stable') {
+        document.querySelector('.version-tab:nth-child(1)').classList.add('active');
+        document.getElementById('stable-version').style.display = 'block';
+        document.getElementById('beta-version').style.display = 'none';
+      } else {
+        document.querySelector('.version-tab:nth-child(2)').classList.add('active');
+        document.getElementById('stable-version').style.display = 'none';
+        document.getElementById('beta-version').style.display = 'block';
+      }
     }
   </script>
 </body>
