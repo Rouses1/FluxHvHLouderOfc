@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FluxClient Loader</title>
+  <style>
+    :root {
+      --bg-color: #0f0f0f;
+      --card-bg: rgba(255, 255, 255, 0.05);
+      --border-color: rgba(255, 255, 255, 0.1);
+      --white: #ffffff;
+      --accent: #888;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-color);
+      color: var(--white);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    .background-overlay {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      overflow: hidden;
+    }
+    
+    .glow {
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(ellipse at center, rgba(200, 200, 200, 0.2), transparent);
+      filter: blur(70px);
+      animation: floatGlow 4s infinite ease-in-out;
+    }
+    
+    .glow:nth-child(1) { top: 8%; left: 12%; animation-delay: 0s; }
+    .glow:nth-child(2) { bottom: 12%; right: 12%; animation-delay: 1s; }
+    .glow:nth-child(3) { top: 35%; left: 65%; animation-delay: 2s; }
+    .glow:nth-child(4) { top: 55%; left: 25%; animation-delay: 3s; }
+    .glow:nth-child(5) { bottom: 15%; right: 35%; animation-delay: 4s; }
+    
+    @keyframes floatGlow {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-20px) scale(1.2); }
+    }
+    
+    .centered {
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      z-index: 1;
+    }
+    
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      backdrop-filter: blur(14px);
+      padding: 40px 30px;
+      border-radius: 20px;
+      margin: 20px auto;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+      opacity: 0;
+      transform: scale(0.95) translateY(20px);
+      animation: fadePop 0.6s forwards ease-out;
+    }
+    
+    @keyframes fadePop {
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    .card h2 {
+      margin-bottom: 20px;
+      font-size: 24px;
+      font-weight: 600;
+    }
+    
+    .btn {
+      display: block;
+      background: linear-gradient(90deg, #888, #bbb, #eee, #fff);
+      background-size: 300% 100%;
+      color: #000;
+      border: none;
+      padding: 14px 22px;
+      border-radius: 14px;
+      font-size: 17px;
+      margin-top: 16px;
+      width: 100%;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      animation: gradientFlow 6s ease infinite;
+    }
+    
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    
+    .btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
+    }
+    
+    .btn:active {
+      transform: scale(0.98);
+    }
+    
+    .btn-back {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      animation: none;
+    }
+    
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .loader-dots span {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      margin: 0 6px;
+      background: var(--white);
+      border-radius: 50%;
+      animation: bounce 1s infinite ease-in-out;
+    }
+    
+    .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+    
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+    
+    .timer-bar {
+      width: 100%;
+      height: 14px;
+      background: #2e2e2e;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 24px;
+    }
+    
+    .timer-bar .progress {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(to right, #888, #fff);
+      border-radius: 8px;
+      transition: width 0.5s ease-in-out;
+    }
+    
+    .notification {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a1a;
+      color: #fff;
+      padding: 16px 24px;
+      border: 1px solid #444;
+      border-radius: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 9999;
+    }
+    
+    .notification.show {
+      opacity: 1;
+    }
+    
+    .version-tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .version-tab {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .version-tab.active {
+      background: rgba(255, 255, 255, 0.2);
+      font-weight: 600;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: white;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.15);
+    }
+    
+    .form-group .error-text {
+      color: #ff4d4d;
+      font-size: 13px;
+      margin-top: 5px;
+      display: none;
+    }
+    
+    .switch-form {
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    
+    .switch-form a {
+      color: #aaa;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+    
+    .switch-form a:hover {
+      color: white;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="background-overlay">
+    <div class="glow"></div>
+    <div class="glow"></div>
+    <div class="glow"></div>
+    <div class="glow"></div>
+    <div class="glow"></div>
+  </div>
+  
+  <div class="centered">
+    <!-- Форма входа (первый экран) -->
+    <div class="card" id="loginForm">
+      <h2>Вход</h2>
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="Введите ваш email" oninput="validateEmail(this)">
+        <div class="error-text" id="loginEmailError">Некорректный email</div>
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Пароль</label>
+        <input type="password" id="loginPassword" placeholder="Введите пароль" oninput="validatePassword(this)">
+        <div class="error-text" id="loginPasswordError">Пароль должен содержать минимум 8 символов</div>
+      </div>
+      <button class="btn" onclick="login()">Войти</button>
+      <div class="switch-form">
+        Нет аккаунта? <a href="javascript:void(0)" onclick="showView('registerForm')">Зарегистрироваться</a>
+      </div>
+    </div>
+    
+    <!-- Форма регистрации -->
+    <div class="card" id="registerForm" style="display:none">
+      <h2>Регистрация</h2>
+      <div class="form-group">
+        <label for="regUsername">Имя пользователя</label>
+        <input type="text" id="regUsername" placeholder="Придумайте имя" oninput="validateUsername(this)">
+        <div class="error-text" id="regUsernameError">Имя пользователя обязательно</div>
+      </div>
+      <div class="form-group">
+        <label for="regEmail">Email</label>
+        <input type="email" id="regEmail" placeholder="Введите ваш email" oninput="validateRegEmail(this)">
+        <div class="error-text" id="regEmailError">Некорректный email или уже зарегистрирован</div>
+      </div>
+      <div class="form-group">
+        <label for="regPassword">Пароль</label>
+        <input type="password" id="regPassword" placeholder="Придумайте пароль" oninput="validateRegPassword(this)">
+        <div class="error-text" id="regPasswordError">Пароль должен содержать минимум 8 символов</div>
+      </div>
+      <div class="form-group">
+        <label for="regConfirmPassword">Подтвердите пароль</label>
+        <input type="password" id="regConfirmPassword" placeholder="Повторите пароль" oninput="validateConfirmPassword(this)">
+        <div class="error-text" id="regConfirmError">Пароли не совпадают</div>
+      </div>
+      <button class="btn" onclick="register()">Зарегистрироваться</button>
+      <div class="switch-form">
+        Уже есть аккаунт? <a href="javascript:void(0)" onclick="showView('loginForm')">Войти</a>
+      </div>
+    </div>
+    
+    <!-- Главное меню (после входа) -->
+    <div class="card" id="mainMenu" style="display:none">
+      <h2>Flux Loader</h2>
+      <button class="btn" onclick="showSubscribeModal('flux')">Flux Client</button>
+      <button class="btn" onclick="showSubscribeModal('appolon')">Other</button>
+    </div>
+    
+    <!-- Модалка подписки (общая для Flux и Appolon) -->
+    <div class="card" id="subscribeModal" style="display:none">
+      <h2 id="subscribeTitle">Flux Client</h2>
+      <p>Для доступа необходимо подписаться</p>
+      <a class="btn" href="https://t.me/FluxHvH" target="_blank" onclick="markSubscribed(1)">Подписаться</a>
+      <a class="btn" href="https://t.me/Chat_FluxHvH" target="_blank" onclick="markSubscribed(2)">Подписаться</a>
+      <div class="timer-bar">
+        <div class="progress" id="progressBar"></div>
+      </div>
+      <button class="btn" id="checkBtn" onclick="checkSubs()" disabled>Проверить</button>
+      <button class="btn btn-back" onclick="backToMainMenu()">Назад</button>
+    </div>
+    
+    <!-- Проверка подписки -->
+    <div class="card" id="checking" style="display:none">
+      <div class="loader-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <p>Проверка...</p>
+    </div>
+    
+    <!-- Скачивание FluxClient -->
+    <div class="card" id="downloadFlux" style="display:none">
+      <h2>Flux Client</h2>
+      <div class="version-tabs">
+        <div class="version-tab active" onclick="showFluxVersion('stable')">x64 bit</div>
+        <div class="version-tab" onclick="showFluxVersion('beta')">Beta</div>
+      </div>
+      <div id="flux-stable">
+        <a class="btn" href="https://www.mediafire.com/file/7u29yuhim55mxl9/FluxClient.apk/file" target="_blank">Скачать FluxClient x64</a>
+      </div>
+      <div id="flux-beta" style="display:none">
+        <a class="btn" href="https://www.mediafire.com/file/spkqa0si0jnxcdw/Flux-Beta.apk/file" target="_blank">Скачать FluxClient Beta</a>
+      </div>
+      <button class="btn btn-back" onclick="backToMainMenu()">Назад</button>
+    </div>
+    
+    <!-- Скачивание Appolon -->
+    <div class="card" id="downloadAppolon" style="display:none">
+      <h2>Appolon</h2>
+      <div class="version-tabs">
+        <div class="version-tab active" onclick="showAppolonVersion('x64')">x64 bit</div>
+        <div class="version-tab" onclick="showAppolonVersion('x32')">x32 bit</div>
+      </div>
+      <div id="appolon-x64">
+        <a class="btn" href="https://www.mediafire.com/file/pq3urr4412argp4/YouTube_20.29.20_(arm64-v8a)(nodpi)_apkmirror.com.apk/file" target="_blank">Скачать Appolon x64</a>
+      </div>
+      <div id="appolon-x32" style="display:none">
+        <a class="btn" href="https://www.mediafire.com/file/w1naqr0rnwv6gy2/com.google.android.youtube_20.29.20.10_armeabi-v7a.apk/file" target="_blank">Скачать Appolon x32</a>
+      </div>
+      <button class="btn btn-back" onclick="backToMainMenu()">Назад</button>
+    </div>
+    
+    <!-- Уведомления -->
+    <div class="notification" id="errorMsg">
+      Пожалуйста, подпишитесь на оба канала!
+    </div>
+    <div class="notification" id="authMsg" style="display:none"></div>
+  </div>
+
+  <script>
+    // Данные пользователей (в реальном приложении это должно быть на сервере)
+    const registeredUsers = [
+      { email: "user@example.com", username: "user1", password: "password123" },
+      { email: "test@example.com", username: "testuser", password: "test1234" }
+    ];
+    
+    let subs = [false, false];
+    let checkingInProgress = false;
+    let currentView = 'loginForm';
+    let selectedDownloadType = '';
+    let currentUser = null;
+    
+    // Валидация email при входе
+    function validateEmail(input) {
+      const email = input.value;
+      const errorElement = document.getElementById('loginEmailError');
+      const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      
+      if (email && !isValid) {
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Валидация пароля при входе
+    function validatePassword(input) {
+      const password = input.value;
+      const errorElement = document.getElementById('loginPasswordError');
+      const isValid = password.length >= 8;
+      
+      if (password && !isValid) {
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Валидация имени пользователя
+    function validateUsername(input) {
+      const username = input.value;
+      const errorElement = document.getElementById('regUsernameError');
+      
+      if (!username.trim()) {
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Валидация email при регистрации
+    function validateRegEmail(input) {
+      const email = input.value;
+      const errorElement = document.getElementById('regEmailError');
+      const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      const isEmailTaken = registeredUsers.some(user => user.email === email);
+      
+      if (email && (!isEmailValid || isEmailTaken)) {
+        errorElement.textContent = isEmailTaken ? 
+          'Этот email уже зарегистрирован' : 'Некорректный email';
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Валидация пароля при регистрации
+    function validateRegPassword(input) {
+      const password = input.value;
+      const errorElement = document.getElementById('regPasswordError');
+      const isValid = password.length >= 8;
+      
+      if (password && !isValid) {
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Валидация подтверждения пароля
+    function validateConfirmPassword(input) {
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = input.value;
+      const errorElement = document.getElementById('regConfirmError');
+      
+      if (confirmPassword && password !== confirmPassword) {
+        errorElement.style.display = 'block';
+        input.style.borderColor = '#ff4d4d';
+        return false;
+      } else {
+        errorElement.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+        return true;
+      }
+    }
+    
+    // Показать уведомление
+    function showAuthMessage(text) {
+      const msg = document.getElementById('authMsg');
+      msg.textContent = text;
+      msg.style.display = 'block';
+      msg.style.backgroundColor = '#1a1a1a';
+      msg.style.borderColor = '#444';
+      msg.classList.add('show');
+      
+      setTimeout(() => {
+        msg.classList.remove('show');
+        setTimeout(() => msg.style.display = 'none', 300);
+      }, 4000);
+    }
+    
+    // Показать нужный экран
+    function showView(viewId) {
+      document.getElementById(currentView).style.display = 'none';
+      document.getElementById(viewId).style.display = 'block';
+      currentView = viewId;
+    }
+    
+    // Авторизация
+    function login() {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      
+      // Валидация полей
+      const isEmailValid = validateEmail(document.getElementById('loginEmail'));
+      const isPasswordValid = validatePassword(document.getElementById('loginPassword'));
+      
+      if (!isEmailValid || !isPasswordValid) {
+        showAuthMessage('Пожалуйста, исправьте ошибки в форме');
+        return;
+      }
+      
+      // Проверка пользователя
+      const user = registeredUsers.find(u => u.email === email && u.password === password);
+      
+      if (user) {
+        currentUser = user;
+        showAuthMessage('Вход выполнен');
+        setTimeout(() => {
+          showView('mainMenu');
+        }, 1500);
+      } else {
+        showAuthMessage('Неверный email или пароль');
+      }
+    }
+    
+    // Регистрация
+    function register() {
+      const username = document.getElementById('regUsername').value;
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      const confirmPassword = document.getElementById('regConfirmPassword').value;
+      
+      // Валидация полей
+      const isUsernameValid = validateUsername(document.getElementById('regUsername'));
+      const isEmailValid = validateRegEmail(document.getElementById('regEmail'));
+      const isPasswordValid = validateRegPassword(document.getElementById('regPassword'));
+      const isConfirmValid = validateConfirmPassword(document.getElementById('regConfirmPassword'));
+      
+      if (!isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmValid) {
+        showAuthMessage('Пожалуйста, исправьте ошибки в форме');
+        return;
+      }
+      
+      // Проверка, что пользователь не существует
+      if (registeredUsers.some(u => u.email === email)) {
+        showAuthMessage('Этот email уже зарегистрирован');
+        return;
+      }
+      
+      // Регистрация нового пользователя
+      registeredUsers.push({
+        email: email,
+        username: username,
+        password: password
+      });
+      
+      showAuthMessage('Регистрация прошла успешно');
+      setTimeout(() => {
+        showView('loginForm');
+        // Очистка формы
+        document.getElementById('regUsername').value = '';
+        document.getElementById('regEmail').value = '';
+        document.getElementById('regPassword').value = '';
+        document.getElementById('regConfirmPassword').value = '';
+      }, 1500);
+    }
+    
+    // Главное меню
+    function backToMainMenu() {
+      showView('mainMenu');
+      resetSubs();
+    }
+    
+    function resetSubs() {
+      subs = [false, false];
+      updateProgress();
+    }
+    
+    // Подписки
+    function showSubscribeModal(type) {
+      selectedDownloadType = type;
+      const title = document.getElementById('subscribeTitle');
+      title.textContent = type === 'flux' ? 'Flux Client' : 'Appolon';
+      showView('subscribeModal');
+    }
+    
+    function markSubscribed(index) {
+      subs[index - 1] = true;
+      updateProgress();
+    }
+    
+    function updateProgress() {
+      let progress = document.getElementById('progressBar');
+      let checkBtn = document.getElementById('checkBtn');
+      
+      if (subs[0] && subs[1]) {
+        progress.style.width = '100%';
+        checkBtn.disabled = false;
+      } else if (subs[0] || subs[1]) {
+        progress.style.width = '50%';
+        checkBtn.disabled = true;
+      } else {
+        progress.style.width = '0%';
+        checkBtn.disabled = true;
+      }
+    }
+    
+    function checkSubs() {
+      if (checkingInProgress) return;
+      
+      checkingInProgress = true;
+      showView('checking');
+    
+      setTimeout(() => {
+        checkingInProgress = false;
+        if (subs[0] && subs[1]) {
+          if (selectedDownloadType === 'flux') {
+            showView('downloadFlux');
+          } else {
+            showView('downloadAppolon');
+          }
+        } else {
+          showView('subscribeModal');
+          showError();
+        }
+      }, 2000);
+    }
+    
+    function showError() {
+      const error = document.getElementById('errorMsg');
+      error.classList.add('show');
+      setTimeout(() => error.classList.remove('show'), 4000);
+    }
+    
+    // Версии FluxClient
+    function showFluxVersion(version) {
+      const tabs = document.querySelectorAll('#downloadFlux .version-tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      
+      if (version === 'stable') {
+        tabs[0].classList.add('active');
+        document.getElementById('flux-stable').style.display = 'block';
+        document.getElementById('flux-beta').style.display = 'none';
+      } else {
+        tabs[1].classList.add('active');
+        document.getElementById('flux-stable').style.display = 'none';
+        document.getElementById('flux-beta').style.display = 'block';
+      }
+    }
+    
+    // Версии Appolon
+    function showAppolonVersion(version) {
+      const tabs = document.querySelectorAll('#downloadAppolon .version-tab');
+      tabs.forEach(tab => tab.classList.remove('active'));
+      
+      if (version === 'x64') {
+        tabs[0].classList.add('active');
+        document.getElementById('appolon-x64').style.display = 'block';
+        document.getElementById('appolon-x32').style.display = 'none';
+      } else {
+        tabs[1].classList.add('active');
+        document.getElementById('appolon-x64').style.display = 'none';
+        document.getElementById('appolon-x32').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
